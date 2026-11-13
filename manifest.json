@@ -1,0 +1,15 @@
+{
+  "name": "MoneyPlant NBFC Pro",
+  "short_name": "MoneyPlant",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a2a6c",
+  "theme_color": "#4a148c",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
