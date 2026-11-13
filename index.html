@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneyPlant NBFC Pro (Offline Ready)</title>
+  <link rel="manifest" href="manifest.json">
+  <link href="https://googleapis.com" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+    body { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); min-height: 100vh; padding: 12px; color: #333; }
+    .container { max-width: 1000px; margin: auto; }
+    .header { background: rgba(255,255,255,0.96); padding: 14px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 12px; }
+    .header h1 { background: linear-gradient(90deg, #ff512f, #dd2476); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 24px; }
+    .net-bar { padding: 8px 14px; border-radius: 12px; margin-bottom: 12px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; color: white; }
+    .net-online { background: #2e7d32; }
+    .net-offline { background: #c62828; }
+    .login-box { background: #fff; max-width: 400px; margin: 30px auto; padding: 26px; border-radius: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); text-align: center; }
+    input, select { width: 100%; padding: 11px; margin: 7px 0; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; outline: none; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: white; cursor: pointer; margin-top: 8px; }
+    .btn-primary { background: linear-gradient(90deg, #ff512f, #dd2476); }
+    .btn-green { background: linear-gradient(90deg, #11998e, #38ef7d); }
+    .btn-blue { background: linear-gradient(90deg, #2193b0, #6dd5ed); }
+    .btn-purple { background: linear-gradient(90deg, #8e2de2, #4a00e0); }
+    .btn-orange { background: linear-gradient(90deg, #f12711, #f5af19); }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .stat-card { padding: 14px; border-radius: 16px; color: white; }
+    .c1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .c2 { background: linear-gradient(135deg, #ff758c, #ff7eb3); }
+    .c3 { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #1b4332; }
+    .c4 { background: linear-gradient(135deg, #fa709a, #fee140); color: #333; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; justify-content: center; }
+    .tab-btn { padding: 8px 12px; border: none; border-radius: 20px; background: rgba(255,255,255,0.92); font-weight: 600; font-size: 12px; cursor: pointer; }
+    .tab-btn.active { background: #4a148c; color: white; }
+    .panel { background: rgba(255,255,255,0.97); padding: 16px; border-radius: 18px; display: none; }
+    .panel.active { display: block; }
+    .alert-box { padding: 10px; border-radius: 10px; margin: 8px 0; font-size: 13px; font-weight: 600; }
+    .alert-danger { background: #ffebee; color: #c62828; border-left: 5px solid #c62828; }
+    .alert-success { background: #e8f5e9; color: #2e7d32; border-left: 5px solid #2e7d32; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    th { background: #4a148c; color: white; padding: 8px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #eee; }
+    .badge { padding: 3px 8px; border-radius: 10px; font-size: 11px; color: white; }
+    .bg-green { background: #2e7d32; } .bg-red { background: #c62828; } .bg-orange { background: #ef6c00; }
+    .hidden { display: none; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #fff; padding: 10px 14px; border-radius: 14px; font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌿 MoneyPlant NBFC Pro</h1>
+    <p style="font-size:11.5px;color:#555;">Offline-Ready Smart Society App | Due: 10th | Grace: 11th | Penalty: ₹10/Day</p>
+  </div>
+
+  <div id="netStatusBar" class="net-bar net-online">
+    <span id="netText">🟢 Online - Google Sheet से जुड़ा हुआ है</span>
+    <span id="syncQueueBadge" style="background:rgba(0,0,0,0.25); padding:3px 9px; border-radius:10px; cursor:pointer;" onclick="syncOfflineQueue()">Pending Sync: 0</span>
+  </div>  <div id="loginScreen" class="login-box">
+    <h2 style="color:#4a148c; margin-bottom:15px;">🔐 मेंबर / एडमिन लॉगिन</h2>
+    <input type="number" id="mobInput" placeholder="मोबाइल नंबर (10 अंक)">
+    <input type="password" id="pwdInput" placeholder="पासवर्ड (आखिरी 4 अंक)">
+    <button class="btn btn-primary" onclick="doLogin()">लॉगिन करें 🚀</button>
+    <p id="loginMsg" style="color:red; margin-top:10px; font-size:13px;"></p>
+  </div>
+
+  <div id="appScreen" class="hidden">
+    <div class="top-bar">
+      <div>👋 <strong id="userNameDisplay" style="color:#4a148c;"></strong> (<span id="userRoleDisplay"></span>)</div>
+      <button onclick="logoutApp()" style="background:#c62828; color:white; border:none; padding:5px 12px; border-radius:8px; cursor:pointer;">Logout</button>
+    </div>
+
+    <div class="cards-grid">
+      <div class="stat-card c1"><h3>💰 कुल ग्रुप फंड</h3><h2 id="cardFund">₹0</h2></div>
+      <div class="stat-card c2"><h3>🏦 कुल बकाया लोन</h3><h2 id="cardLoan">₹0</h2></div>
+      <div class="stat-card c3"><h3>💵 उपलब्ध कैश</h3><h2 id="cardCash">₹0</h2></div>
+      <div class="stat-card c4"><h3>📈 बांटा गया लाभ</h3><h2 id="cardInt">₹0</h2></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn member-only active" onclick="showTab('myContTab', this)">💰 My Contribution</button>
+      <button class="tab-btn member-only" onclick="showTab('myLoanTab', this)">🏦 My Loan</button>
+      <button class="tab-btn member-only" onclick="showTab('myPassbookTab', this)">📒 My Passbook</button>
+      <button class="tab-btn member-only" onclick="showTab('calcTab', this)">🧮 EMI Calc</button>
+      <button class="tab-btn member-only" onclick="showTab('reqTab', this)">📝 Apply</button>
+      <button class="tab-btn member-only" onclick="showTab('nomineeTab', this)">🤝 Nominee</button>
+      <button class="tab-btn member-only" onclick="showTab('profileTab', this)">🔑 Password</button>
+
+      <button class="tab-btn admin-only" onclick="showTab('allMembersTab', this)">👥 24 Members</button>
+      <button class="tab-btn admin-only" onclick="showTab('depositTab', this)">➕ Contribution</button>
+      <button class="tab-btn admin-only" onclick="showTab('loanTab', this)">💸 Issue Loan</button>
+      <button class="tab-btn admin-only" onclick="showTab('emiTab', this)">🧾 Collect EMI</button>
+      <button class="tab-btn admin-only" onclick="showTab('approvalsTab', this)">✅ Approvals</button>
+      <button class="tab-btn admin-only" onclick="showTab('duesTab', this)">⚠️ Dues</button>
+      <button class="tab-btn admin-only" onclick="showTab('adminPbTab', this)">📒 Passbook</button>
+      <button class="tab-btn admin-only" onclick="showTab('reportTab', this)">📊 Expense</button>
+      <button class="tab-btn admin-only" onclick="showTab('deleteTab', this)">🗑️ Delete</button>
+    </div>
+
+    <div id="myContTab" class="panel"><h3 style="color:#4a148c;">💰 My Contribution</h3><div id="myContContent" style="margin-top:10px; line-height:1.9;"></div></div>
+    <div id="myLoanTab" class="panel"><h3 style="color:#4a148c;">🏦 My Loan</h3><div id="myLoanContent" style="margin-top:10px;"></div></div>
+    <div id="myPassbookTab" class="panel">
+      <div style="display:flex; justify-content:space-between;"><h3 style="color:#4a148c;">📒 Passbook</h3><button onclick="window.print()" style="background:#4a148c; color:white; border:none; padding:5px 10px; border-radius:6px;">Print</button></div>
+      <div style="overflow-x:auto;"><table><thead><tr><th>तारीख</th><th>विवरण</th><th>जमा (+)</th><th>निकासी (-)</th><th>नोट</th></tr></thead><tbody id="passbookBody"></tbody></table></div>
+    </div>
+    <div id="calcTab" class="panel">
+      <h3 style="color:#4a148c;">🧮 EMI Calculator</h3>
+      <input type="number" id="cAmt" placeholder="लोन राशि" oninput="calcEMI()">
+      <input type="number" id="cRate" placeholder="मासिक ब्याज दर %" oninput="calcEMI()">
+      <input type="number" id="cMonths" placeholder="महीने" oninput="calcEMI()">
+      <div id="calcResult" class="alert-box alert-success">राशि, दर और महीने डालें...</div>
+    </div>
+    <div id="reqTab" class="panel">
+      <h3>📝 लोन अर्जी</h3><input type="number" id="reqLoanAmt" placeholder="राशि"><input type="number" id="reqLoanMonths" placeholder="महीने"><input type="text" id="reqLoanPurpose" placeholder="कारण"><button class="btn btn-blue" onclick="sendLoanReq()">भेजें 🚀</button>
+      <hr style="margin:15px 0;"><h3>🏧 निकासी अर्जी</h3><input type="number" id="reqWithAmt" placeholder="राशि"><button class="btn btn-orange" onclick="sendWithReq()">भेजें 📩</button>
+    </div>
+    <div id="nomineeTab" class="panel">
+      <h3>🤝 Nominee & Guarantor</h3><div id="nomineeDisplay" class="alert-box alert-success"></div>
+      <input type="text" id="nomNameInput" placeholder="नॉमिनी नाम"><input type="text" id="nomRelInput" placeholder="रिश्ता"><button class="btn btn-green" onclick="saveNominee()">सेव करें ✅</button>
+      <h4 style="margin-top:15px;">🛡️ गारंटी रिकॉर्ड:</h4><div id="guarantorList"></div>
+    </div>
+    <div id="profileTab" class="panel"><h3>🔑 पासवर्ड बदलें</h3><input type="text" id="newPwdInput" placeholder="नया पासवर्ड"><button class="btn btn-purple" onclick="updatePwd()">सेव करें ✅</button></div>
+
+    <div id="allMembersTab" class="panel"><h3>👥 24 Members & Share %</h3><div style="overflow-x:auto;"><table><thead><tr><th>ID</th><th>नाम</th><th>जमा</th><th>शेयर %</th><th>लाभ</th><th>कुल वैल्यू</th><th>लोन</th></tr></thead><tbody id="membersTableBody"></tbody></table></div></div>
+    <div id="depositTab" class="panel">
+      <h3>➕ Add Contribution (Offline Supported)</h3>
+      <select id="depMemberSelect" onchange="autoFillContPenalty()"></select><div id="depPenaltyAlert" class="alert-box alert-danger hidden"></div>
+      <input type="number" id="depAmount" placeholder="जमा राशि (₹)"><input type="number" id="depPenalty" placeholder="पेनल्टी (₹)" value="0"><input type="text" id="depRemark" placeholder="विवरण">
+      <button class="btn btn-green" onclick="submitDeposit()">जमा करें ✅</button>
+    </div>
+    <div id="loanTab" class="panel">
+      <h3>💸 Issue Loan</h3>
+      <select id="loanMemberSelect"></select><select id="loanGuarantorSelect"></select>
+      <input type="number" id="loanAmount" placeholder="लोन राशि"><input type="number" id="loanRate" placeholder="मासिक ब्याज %"><input type="number" id="loanMonths" placeholder="महीने">
+      <button class="btn btn-blue" onclick="submitLoan()">लोन दें ✅</button>
+    </div>
+    <div id="emiTab" class="panel">
+      <h3>🧾 Collect EMI (Offline Supported)</h3>
+      <select id="emiLoanSelect" onchange="autoFillEmiPenalty()"></select><div id="emiPenaltyAlert" class="alert-box alert-danger hidden"></div>
+      <input type="number" id="emiAmount" placeholder="EMI राशि"><input type="number" id="emiPenalty" placeholder="पेनल्टी" value="0">
+      <button class="btn btn-purple" onclick="submitEMI()">EMI जमा करें 🚀</button>
+    </div>
+    <div id="approvalsTab" class="panel">
+      <h3>📋 Approvals</h3><div style="overflow-x:auto;"><table><thead><tr><th>ID</th><th>तारीख</th><th>नाम</th><th>राशि</th><th>महीने</th><th>कारण</th><th>स्टेटस</th><th>एक्शन</th></tr></thead><tbody id="loanReqTableBody"></tbody></table></div>
+      <div style="overflow-x:auto;margin-top:15px;"><table><thead><tr><th>ID</th><th>तारीख</th><th>नाम</th><th>राशि</th><th>स्टेटस</th><th>एक्शन</th></tr></thead><tbody id="withTableBody"></tbody></table></div>
+    </div>
+    <div id="duesTab" class="panel"><h3>⚠️ Pending Dues</h3><div style="overflow-x:auto;"><table><thead><tr><th>नाम</th><th>मोबाइल</th><th>Contribution</th><th>EMI</th><th>पेनल्टी</th><th>WhatsApp</th></tr></thead><tbody id="duesTableBody"></tbody></table></div></div>
+    <div id="adminPbTab" class="panel"><h3>📒 Member Passbook</h3><select id="adminPbSelect" onchange="renderAdminMemberPb()"></select><div style="overflow-x:auto;"><table><thead><tr><th>तारीख</th><th>विवरण</th><th>जमा</th><th>निकासी</th><th>नोट</th></tr></thead><tbody id="adminPbBody"></tbody></table></div></div>
+    <div id="reportTab" class="panel">
+      <h3>📊 Report & Expense</h3><div id="monthlySummaryBox" class="alert-box alert-success"></div>
+      <input type="text" id="expTitle" placeholder="खर्च नाम"><input type="number" id="expAmt" placeholder="राशि"><input type="text" id="expRem" placeholder="विवरण"><button class="btn btn-orange" onclick="submitExpense()">खर्च दर्ज करें ✅</button>
+      <div style="overflow-x:auto;"><table><thead><tr><th>ID</th><th>तारीख</th><th>खर्च</th><th>राशि</th><th>विवरण</th></tr></thead><tbody id="expTableBody"></tbody></table></div>
+    </div>
+    <div id="deleteTab" class="panel"><h3>🗑️ Delete Entry</h3><div style="overflow-x:auto;"><table><thead><tr><th>ID</th><th>तारीख</th><th>विवरण</th><th>एक्शन</th></tr></thead><tbody id="deleteTableBody"></tbody></table></div></div>
+  </div>
+</div><script>
+  // यहाँ "YOUR_WEB_APP_URL_HERE" हटाकर अपना Google Apps Script Web App URL पेस्ट करें:
+  const API_URL = "YOUR_WEB_APP_URL_HERE";
+
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+  var currentUser = JSON.parse(localStorage.getItem('mp_user') || 'null');
+  var globalData = JSON.parse(localStorage.getItem('mp_data') || 'null');
+  var offlineQueue = JSON.parse(localStorage.getItem('mp_queue') || '[]');
+
+  function updateNetUI() {
+    var bar = document.getElementById('netStatusBar');
+    var txt = document.getElementById('netText');
+    document.getElementById('syncQueueBadge').innerText = 'Pending Sync: ' + offlineQueue.length;
+    if (navigator.onLine) {
+      bar.className = 'net-bar net-online';
+      txt.innerText = '🟢 Online - Google Sheet से जुड़ा है';
+      if (offlineQueue.length > 0) syncOfflineQueue();
+    } else {
+      bar.className = 'net-bar net-offline';
+      txt.innerText = '🔴 Offline Mode - एंट्री फोन में सेव होगी';
+    }
+  }
+  window.addEventListener('online', updateNetUI);
+  window.addEventListener('offline', updateNetUI);
+  updateNetUI();
+
+  async function callApi(action, payload, allowOffline) {
+    if (!navigator.onLine && allowOffline) {
+      offlineQueue.push({ action: action, payload: payload, time: new Date().toLocaleTimeString() });
+      localStorage.setItem('mp_queue', JSON.stringify(offlineQueue));
+      updateNetUI();
+      return { msg: '📴 इंटरनेट नहीं है! एंट्री फोन में सुरक्षित कर ली गई है। नेट आते ही Google Sheet में अपने आप जुड़ जाएगी।' };
+    }
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: action, payload: payload })
+    });
+    return await res.json();
+  }
+
+  async function syncOfflineQueue() {
+    if (!navigator.onLine || offlineQueue.length === 0) return;
+    document.getElementById('netText').innerText = '🔄 Syncing offline entries...';
+    while (offlineQueue.length > 0) {
+      var item = offlineQueue[0];
+      try {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: item.action, payload: item.payload }) });
+        offlineQueue.shift();
+        localStorage.setItem('mp_queue', JSON.stringify(offlineQueue));
+      } catch (e) { break; }
+    }
+    updateNetUI();
+    loadDashboard();
+    alert('✅ सभी ऑफलाइन एंट्रीज Google Sheet में अपडेट हो गई हैं!');
+  }
+
+  async function doLogin() {
+    var mob = document.getElementById('mobInput').value;
+    var pwd = document.getElementById('pwdInput').value;
+    document.getElementById('loginMsg').innerText = 'चेक किया जा रहा है...';
+    try {
+      var res = await callApi('login', { mob: mob, pwd: pwd }, false);
+      if (res.success) {
+        currentUser = res.user;
+        localStorage.setItem('mp_user', JSON.stringify(currentUser));
+        initAppScreen();
+      } else { document.getElementById('loginMsg').innerText = res.message; }
+    } catch (e) { document.getElementById('loginMsg').innerText = 'इंटरनेट या API लिंक जांचें!'; }
+  }
+
+  function initAppScreen() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('userNameDisplay').innerText = currentUser.name;
+    document.getElementById('userRoleDisplay').innerText = currentUser.role;
+    if (currentUser.role === 'Admin') {
+      document.querySelectorAll('.member-only').forEach(el => el.style.display = 'none');
+      showTab('allMembersTab', document.querySelector('.admin-only'));
+    } else {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+      showTab('myContTab', document.querySelector('.member-only'));
+    }
+    if (globalData) renderData(globalData);
+    loadDashboard();
+  }
+
+  function logoutApp() { localStorage.removeItem('mp_user'); location.reload(); }
+  if (currentUser) initAppScreen();
+
+  async function loadDashboard() {
+    if (!navigator.onLine) return;
+    try {
+      var data = await callApi('getData', {}, false);
+      globalData = data;
+      localStorage.setItem('mp_data', JSON.stringify(data));
+      renderData(data);
+    } catch (e) {}
+  }
+
+  function renderData(data) {
+    document.getElementById('cardFund').innerText = '₹' + data.summary.totalFund;
+    document.getElementById('cardLoan').innerText = '₹' + data.summary.totalLoanGiven;
+    document.getElementById('cardCash').innerText = '₹' + data.summary.availableCash;
+    document.getElementById('cardInt').innerText = '₹' + data.summary.totalInterest;
+
+    var tbody = '', options = '';
+    data.members.forEach(m => {
+      options += `<option value="${m.id}">${m.id} - ${m.name}</option>`;
+      tbody += `<tr><td>${m.id}</td><td><strong>${m.name}</strong></td><td>₹${m.netDeposit}</td><td><span class="badge bg-orange">${m.sharePct}%</span></td><td style="color:green;font-weight:bold;">+₹${m.interest.toFixed(2)}</td><td><strong>₹${m.totalFundValue}</strong></td><td style="color:red;">₹${m.loanBalance}</td></tr>`;
+      if (m.id === currentUser.id) {
+        var penBox = m.contPenaltyInfo.penaltyAmt > 0 ? `<div class="alert-box alert-danger">⚠️ लेट पेनल्टी: ₹${m.contPenaltyInfo.penaltyAmt}</div>` : `<div class="alert-box alert-success">✅ अगली तारीख: ${m.contPenaltyInfo.nextDueDate}</div>`;
+        document.getElementById('myContContent').innerHTML = `${penBox}<p>💰 <strong>जमा:</strong> ₹${m.netDeposit}</p><p>📊 <strong>शेयर %:</strong> ${m.sharePct}%</p><p>📈 <strong>Verified लाभ:</strong> +₹${m.interest.toFixed(2)}</p><p style="font-size:19px;color:#4a148c;">💎 <strong>कुल फंड वैल्यू: ₹${m.totalFundValue}</strong></p>`;
+        var lHtml = m.loans.length === 0 ? '<p>कोई लोन नहीं।</p>' : '';
+        m.loans.forEach(l => { lHtml += `<div style="border:1px solid #ddd;padding:10px;border-radius:10px;margin-bottom:8px;"><strong>${l.loanId}</strong> (${l.status}) | EMI: ₹${l.monthlyEmi} | बकाया: ₹${l.balance} | Next: ${l.nextDueDate}</div>`; });
+        document.getElementById('myLoanContent').innerHTML = lHtml;
+        var pbHtml = '';
+        m.passbook.forEach(p => { pbHtml += `<tr><td>${p.date}</td><td>${p.type}</td><td style="color:green;">${p.credit>0?'+₹'+p.credit:'-'}</td><td style="color:red;">${p.debit>0?'-₹'+p.debit:'-'}</td><td>${p.note}</td></tr>`; });
+        document.getElementById('passbookBody').innerHTML = pbHtml;
+        document.getElementById('nomineeDisplay').innerHTML = `👤 नॉमिनी: ${m.nomineeName} (${m.nomineeRel})`;
+      }
+    });
+    document.getElementById('membersTableBody').innerHTML = tbody;
+    document.getElementById('depMemberSelect').innerHTML = options;
+    document.getElementById('loanMemberSelect').innerHTML = options;
+    document.getElementById('loanGuarantorSelect').innerHTML = '<option value="">-- गारंटर --</option>' + options;
+    document.getElementById('adminPbSelect').innerHTML = options;
+    autoFillContPenalty(); renderAdminMemberPb();
+
+    var loanOpts = '';
+    data.activeLoans.forEach(l => { loanOpts += `<option value="${l.loanId}">${l.loanId} - ${l.name} (EMI: ₹${l.monthlyEmi})</option>`; });
+    document.getElementById('emiLoanSelect').innerHTML = loanOpts || '<option>कोई लोन नहीं</option>';
+    autoFillEmiPenalty();
+
+    var lrHtml = '';
+    data.loanRequests.forEach(r => { lrHtml += `<tr><td>${r.reqId}</td><td>${r.date}</td><td>${r.name}</td><td>₹${r.amount}</td><td>${r.months}</td><td>${r.purpose}</td><td>${r.status}</td><td>${r.status==='Pending'?`<button onclick="actLoanReq('${r.reqId}','Approved')">✔</button>`:'-'}</td></tr>`; });
+    document.getElementById('loanReqTableBody').innerHTML = lrHtml;
+
+    var wHtml = '';
+    data.withdrawals.forEach(w => { wHtml += `<tr><td>${w.reqId}</td><td>${w.date}</td><td>${w.name}</td><td>₹${w.amount}</td><td>${w.status}</td><td>${w.status==='Pending'?`<button onclick="approveW('${w.reqId}')">✔</button>`:'-'}</td></tr>`; });
+    document.getElementById('withTableBody').innerHTML = wHtml;
+
+    var dHtml = '';
+    data.pendingDues.forEach(d => {
+      var totPen = d.contPen + d.emiPen;
+      var msg = encodeURIComponent(`नमस्ते ${d.name}, MoneyPlant NBFC में आपका भुगतान बाकी है। पेनल्टी: ₹${totPen}`);
+      dHtml += `<tr><td>${d.name}</td><td>${d.mob}</td><td>${d.contDue?'बाकी':'जमा'}</td><td>₹${d.emiDue}</td><td>₹${totPen}</td><td><a href="https://wa.me{d.mob}?text=${msg}" target="_blank">📲 WhatsApp</a></td></tr>`;
+    });
+    document.getElementById('duesTableBody').innerHTML = dHtml;
+    document.getElementById('monthlySummaryBox').innerHTML = `फंड: ₹${data.summary.totalFund} | लोन: ₹${data.summary.totalLoanGiven} | लाभ: ₹${data.summary.totalInterest} | खर्च: ₹${data.summary.totalExpenses}`;
+    var delHtml = '';
+    data.recentEntries.forEach(r => { delHtml += `<tr><td>${r.entryId}</td><td>${r.date}</td><td>${r.desc}</td><td><button onclick="delEntry('${r.sheet}','${r.entryId}')">Delete</button></td></tr>`; });
+    document.getElementById('deleteTableBody').innerHTML = delHtml;
+  }
+
+  function renderAdminMemberPb() {
+    if (!globalData) return;
+    var m = globalData.members.find(x => x.id === document.getElementById('adminPbSelect').value);
+    var pbHtml = '';
+    if (m) m.passbook.forEach(p => { pbHtml += `<tr><td>${p.date}</td><td>${p.type}</td><td>${p.credit}</td><td>${p.debit}</td><td>${p.note}</td></tr>`; });
+    document.getElementById('adminPbBody').innerHTML = pbHtml;
+  }
+  function autoFillContPenalty() {
+    if (!globalData) return;
+    var m = globalData.members.find(x => x.id === document.getElementById('depMemberSelect').value);
+    var b = document.getElementById('depPenaltyAlert');
+    if (m && m.contPenaltyInfo.penaltyAmt > 0) { b.classList.remove('hidden'); b.innerText = '⚠️ पेनल्टी: ₹' + m.contPenaltyInfo.penaltyAmt; document.getElementById('depPenalty').value = m.contPenaltyInfo.penaltyAmt; }
+    else { b.classList.add('hidden'); document.getElementById('depPenalty').value = 0; }
+  }
+
+
